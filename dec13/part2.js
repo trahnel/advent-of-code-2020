@@ -2,44 +2,31 @@ const path = require('path');
 const fs = require('fs');
 
 const solve = (data) => {
-  // const busIdStrings = data.split('\n')[1];
-  const busIdStrings = '1789,37,47,1889';
-  const busIdNumbers = busIdStrings
+  const busIdStrings = data.split('\n')[1];
+  // const busIdStrings = '7,13,x,x,59,x,31,19';
+  const buses = busIdStrings
     .split(',')
-    .map((busId) => (busId === 'x' ? null : parseInt(busId)));
-  const maxBusId = Math.max(...busIdNumbers);
-  const maxBusIdIndex = busIdNumbers.findIndex((busId) => busId === maxBusId);
-  console.log({ busIdNumbers, maxBusId, maxBusIdIndex });
+    .map((busId, index) =>
+      busId === 'x' ? null : { id: parseInt(busId), index }
+    )
+    .filter((bus) => bus);
+  console.log({ busIdNumbers: buses });
 
-  const busIdToIndexDiff = new Map();
-  busIdNumbers.forEach((busId, index) => {
-    if (busId !== null && busId !== maxBusId) {
-      const indexDiff = maxBusIdIndex - index;
-      busIdToIndexDiff.set(busId, indexDiff);
+  let time = buses[0].id;
+  let step = buses[0].id;
+  for (let i = 1; i < buses.length; i++) {
+    const { id, index } = buses[i];
+    while ((time + index) % id !== 0) {
+      time += step;
     }
-  });
-  console.log({ busIdToIndexDiff, length: busIdToIndexDiff.size });
-
-  let allMatch = false;
-  let t = maxBusId;
-  while (!allMatch) {
-    allMatch = true;
-    for (let [busId, indexDiff] of busIdToIndexDiff) {
-      const busTime = t - indexDiff;
-      if (busTime % busId !== 0) {
-        // NO MATCH :/
-        allMatch = false;
-        break;
-      }
-    }
-    t += maxBusId;
+    step = step * id;
   }
-  const result = t - maxBusId - maxBusIdIndex;
-  console.log({ t, maxBusIdIndex, result });
+  return time;
 };
 
 const data = fs.readFileSync(path.resolve(__dirname, 'input.txt'), 'utf8');
 var start = new Date();
-solve(data);
+const result = solve(data);
+console.log({ result });
 var time = new Date() - start;
 console.log('Time:', time, 'ms');
