@@ -3,7 +3,7 @@ const fs = require('fs');
 
 const solve = (data) => {
   const categories = data.split('\n\n');
-  console.log({ values: categories });
+  // console.log({ values: categories });
 
   const parseRange = (range) => {
     range = range.split('-');
@@ -30,7 +30,11 @@ const solve = (data) => {
   };
 
   const parseMyTicket = (myTicketInput) => {
-    return myTicketInput.split(',').map((val) => parseInt(val));
+    return myTicketInput
+      .split('\n')
+      .slice(1)[0]
+      .split(',')
+      .map((val) => parseInt(val));
   };
 
   const parseNearbyTicket = (nearbyTicketsInput) => {
@@ -50,6 +54,17 @@ const solve = (data) => {
     return validTickets;
   };
 
+  const findField = (values, fields) => {
+    const matchingKeys = [];
+    fields.forEach((fValue, fKey) => {
+      const includesAll = values.every((value) => fValue.includes(value));
+      if (includesAll) {
+        matchingKeys.push(fKey);
+      }
+    });
+    return matchingKeys;
+  };
+
   const [fieldsInput, yourTicketInput, nearbyTicketsInput] = categories;
   const fields = parseValues(fieldsInput);
   const myTicket = parseMyTicket(yourTicketInput);
@@ -58,11 +73,44 @@ const solve = (data) => {
   const allFieldValues = new Set(Array.from(fields.values()).flat());
   const validTickets = getValidTickets(nearbyTickets, allFieldValues);
 
-  console.log({ validTickets });
-  // console.log({ fields, myTicket, nearbyTickets });
+  // console.log({ fields, validTickets });
+
+  const valueColumns = validTickets.map((_, colIndex) =>
+    validTickets.map((row) => row[colIndex])
+  );
+  // console.log({ valueColumns });
+
+  const colFields = valueColumns.map((valueCol, index) => {
+    const fieldCol = findField(valueCol, fields);
+    return fieldCol;
+  });
+
+  while (colFields.flat().length !== myTicket.length) {
+    colFields.forEach((colField) => {
+      if (colField.length === 1) {
+        colFields.forEach((cf, i) => {
+          if (cf.length > 1) {
+            newColField = cf.filter((cfv) => cfv !== colField[0]);
+            colFields[i] = newColField;
+          }
+        });
+      }
+    });
+  }
+
+  const finalColFields = colFields.flat();
+  // console.log({ finalColFields });
+
+  const result = finalColFields.reduce((acc, colField, index) => {
+    if (colField.startsWith('departure')) {
+      return myTicket[index] * acc;
+    }
+    return acc;
+  }, 1);
+  return result;
 };
 
-const data = fs.readFileSync(path.resolve(__dirname, 'test1.txt'), 'utf8');
+const data = fs.readFileSync(path.resolve(__dirname, 'input.txt'), 'utf8');
 var start = new Date();
 const result = solve(data);
 console.log({ result });
